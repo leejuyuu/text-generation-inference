@@ -25,9 +25,8 @@ const IS_GHA_BUILD: LazyLock<bool> = LazyLock::new(|| {
 // Dependencies
 const BACKEND_DEPS: &str = "tgi_trtllm_backend_impl";
 const CUDA_TRANSITIVE_DEPS: [&str; 4] = ["cuda", "cudart", "cublas", "nvidia-ml"];
-const TENSORRT_LLM_TRANSITIVE_DEPS: [(&str, &str); 5] = [
+const TENSORRT_LLM_TRANSITIVE_DEPS: [(&str, &str); 4] = [
     ("dylib", "tensorrt_llm"),
-    ("dylib", "tensorrt_llm_nvrtc_wrapper"),
     ("dylib", "nvinfer_plugin_tensorrt_llm"),
     ("dylib", "decoder_attention_0"),
     ("dylib", "decoder_attention_1"),

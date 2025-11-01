@@ -1,5 +1,7 @@
-ARG cuda_arch_list="75-real;80-real;86-real;89-real;90-real;100-real;120-real"
-ARG cuda_base=12.8.0
+# Remove 75 because it would be rejected by TensorRT-LLM cmake
+# See https://github.com/NVIDIA/TensorRT-LLM/blob/ae8270b713446948246f16fadf4e2a32e35d0f62/cpp/cmake/modules/cuda_configuration.cmake#L190C3-L190C6
+ARG cuda_arch_list="80-real;86-real;89-real;90-real;100-real;120-real"
+ARG cuda_base=12.8.1
 ARG build_type=release
 ARG ompi_version=4.1.7
 ARG sccache_gha_enabled=off
@@ -20,6 +22,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     lld \
     libssl-dev \
     libucx-dev \
+    libnuma-dev \
     libasan8 \
     libubsan1 \
     ninja-build \
@@ -56,6 +59,10 @@ FROM cuda-builder AS trt-builder
 COPY backends/trtllm/scripts/install_tensorrt.sh /opt/install_tensorrt.sh
 RUN chmod +x /opt/install_tensorrt.sh && \
     /opt/install_tensorrt.sh
+RUN rm -r /usr/local/tensorrt/data \
+    /usr/local/tensorrt/python \
+    /usr/local/tensorrt/samples \
+    /usr/local/tensorrt/targets/x86_64-linux-gnu/bin
 
 # Build Backend
 FROM cuda-builder AS tgi-builder
@@ -107,6 +114,7 @@ RUN export CC=gcc-14 \
     mkdir $TGI_INSTALL_PREFIX && mkdir "$TGI_INSTALL_PREFIX/include" && mkdir "$TGI_INSTALL_PREFIX/lib" && \
     cargo build --profile ${build_type} --package text-generation-backends-trtllm --bin text-generation-backends-trtllm && \
     sccache --show-stats
+RUN rm /usr/local/tgi/lib/libtgi_trtllm_backend_impl.a
 
 FROM nvidia/cuda:${cuda_base}-cudnn-runtime-ubuntu24.04 AS runtime
 RUN apt update && apt install -y libucx0 pipx python3-minimal python3-dev python3-pip python3-venv && \
